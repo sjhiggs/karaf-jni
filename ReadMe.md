@@ -42,7 +42,7 @@ java.lang.UnsatisfiedLinkError: Native Library /opt/native-bridge/libnbridge.so 
 
 To avoid this, the native library is included in the bundle itself, and the bundle's headers are modified accordingly.
 
-Copy the share library to the Java project and re-build the Java project:
+Copy the share library to the Java project so it's available during the next step (build/install Java Project):
 
 ```
 $ cp c/build/libnbridge.so java/src/main/resources/
