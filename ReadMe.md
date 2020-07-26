@@ -62,7 +62,7 @@ $ mvn clean install
 ## Install/Run
 
 ```
-karaf@root()> osgi:install mvn:com.rh.example/karaf-jni/1.0.0
+karaf@root()> osgi:install -s mvn:com.rh.example/karaf-jni/1.0.0
 ```
 
 Observe the following logs from stdout and the logs:
