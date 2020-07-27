@@ -48,7 +48,7 @@ Copy the share library to the Java project so it's available during the next ste
 $ cp c/build/libnbridge.so java/src/main/resources/
 ```
 
-See the pom.xml for the bundle headers:
+See the pom.xml for the bundle headers, which make it easier to load the library from the bundle:
 ```
 <Bundle-NativeCode>libnbridge.so;osname=linux;processor=x86-64</Bundle-NativeCode>
 ```
