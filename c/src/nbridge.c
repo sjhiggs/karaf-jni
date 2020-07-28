@@ -30,24 +30,66 @@
 
 #include "com_rh_example_NativeBridge.h"
 
-JNIEXPORT void JNICALL Java_com_rh_example_NativeBridge_helloNative
-    (JNIEnv *env, jobject obj, jstring msgFromJava) {
+typedef struct thread_args {
+    JavaVM *vm;
+    jobject obj;
+    jstring msgFromJava;
+} thread_args;
 
-    const char *s = (*env)->GetStringUTFChars(env, msgFromJava, NULL);
+void *callback(void *callbackArgs) {
+
+    thread_args *args = (thread_args *)callbackArgs;
+    JavaVM *vm = args->vm;
+    void *penv;
+
+    (*vm)->AttachCurrentThread(vm, &penv, NULL);
+    JNIEnv *env = (JNIEnv *)penv;
+
+    const char *s = (*env)->GetStringUTFChars(env, args->msgFromJava, NULL);
     printf("native code received: %s\n", s);
 
-    jclass cls = (*env)->GetObjectClass(env, obj);
-
-    //specify the helloCallback method from the calling Java object, with a method that
-    //takes a String parameter and returns void
-    jmethodID mid = (*env)->GetMethodID(env, cls, "helloCallback", "(Ljava/lang/String;)V");
-
-    if (mid == 0) {
+    jclass callbackClazz = (*env)->FindClass(env, "Lcom/rh/example/NativeBridgeCallback;");
+    jmethodID callbackMid = (*env)->GetMethodID(env, callbackClazz, "doCallback", "(Ljava/lang/String;)V");
+    if (callbackMid == 0) {
         printf("ERROR!  Java callback method incorrect!\n");
-        return;
+        (*vm)->DetachCurrentThread(vm);
+        return NULL;
+    }
+    jmethodID constructorMid = (*env)->GetMethodID(env, callbackClazz, "<init>", "()V");
+    if (constructorMid == 0) {
+        printf("ERROR!  Java constructor method incorrect!\n");
+        (*vm)->DetachCurrentThread(vm);
+        return NULL;
     }
 
     jstring jstr = (*env)->NewStringUTF(env, "native code says hello");
-    (*env)->CallVoidMethod(env, obj, mid, jstr);
+    jobject newObj = (*env)->NewObject(env, callbackClazz, constructorMid);
+    (*env)->CallVoidMethod(env, newObj, callbackMid, jstr);
 
+    (*vm)->DetachCurrentThread(vm);
+}
+
+JNIEXPORT void JNICALL Java_com_rh_example_NativeBridge_helloNative
+    (JNIEnv *env, jobject obj, jstring msgFromJava) {
+
+    printf("start native\n");
+
+    thread_args myargs;
+    myargs.obj = obj;
+    myargs.msgFromJava = msgFromJava;
+    (*env)->GetJavaVM(env, &myargs.vm);
+
+    pthread_t mythread;
+
+    if(pthread_create(&mythread, NULL, callback, (void *)&myargs)) {
+        fprintf(stderr, "Error creating thread\n");
+        return;
+    }
+
+    if(pthread_join(mythread, NULL)) {
+        fprintf(stderr, "Error joining thread\n");
+        return;
+    }
+
+    return;
 }

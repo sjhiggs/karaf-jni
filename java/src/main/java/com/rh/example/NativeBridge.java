@@ -27,15 +27,16 @@ public class NativeBridge {
     public static Logger LOG = LoggerFactory.getLogger(NativeBridge.class);
 
     public void testNative() {
-        helloNative("hello from karaf");
+        helloNative("Java says hello");
     }
 
     //call to native code
     public native void helloNative(String name);
 
-    //callback from native code
-    public void helloCallback(String message) {
-        LOG.info("{}", message);
-    }
+//    //callback from native code
+//    public void helloCallback(String message) {
+//        LOG.info("{}", message);
+//    }
+
 
 }

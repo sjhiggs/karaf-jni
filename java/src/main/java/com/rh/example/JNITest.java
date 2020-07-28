@@ -35,8 +35,13 @@ public class JNITest {
     private static final Logger LOG = LoggerFactory.getLogger(JNITest.class);
 
     static {
-        //System.load("/opt/native-bridge/libnbridge.so");
-        System.loadLibrary("nbridge");
+        try {
+            System.loadLibrary("libnbridge.so");
+        } catch (java.lang.UnsatisfiedLinkError e) {
+            LOG.warn("unable to load default library, trying /opt/native-bridge/libnbridge.so");
+            System.load("/opt/native-bridge/libnbridge.so");
+        }
+
     }
 
     @Activate
