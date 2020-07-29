@@ -33,6 +33,7 @@
 typedef struct thread_args {
     JavaVM *vm;
     jobject obj;
+    jobject loader;
     jstring msgFromJava;
 } thread_args;
 
@@ -48,7 +49,22 @@ void *callback(void *callbackArgs) {
     const char *s = (*env)->GetStringUTFChars(env, args->msgFromJava, NULL);
     printf("native code received: %s\n", s);
 
-    jclass callbackClazz = (*env)->FindClass(env, "Lcom/rh/example/NativeBridgeCallback;");
+    jclass loader_clazz = (*env)->GetObjectClass(env, args->loader);
+    jmethodID loadClass_mid = (*env)->GetMethodID(env, loader_clazz, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+    if (!loadClass_mid) {
+        printf("ERROR! Can't get \"loadClass\" handle!\n");
+        (*vm)->DetachCurrentThread(vm);
+        return NULL;
+    }
+
+    jstring cname = (*env)->NewStringUTF(env, "com.rh.example.NativeBridgeCallback");
+    jclass callbackClazz = (*env)->CallObjectMethod(env, args->loader, loadClass_mid, cname);
+	if (!callbackClazz) {
+		printf("ERROR! Java class incorrect!\n");
+		(*vm)->DetachCurrentThread(vm);
+		return NULL;
+	}
+
     jmethodID callbackMid = (*env)->GetMethodID(env, callbackClazz, "doCallback", "(Ljava/lang/String;)V");
     if (callbackMid == 0) {
         printf("ERROR!  Java callback method incorrect!\n");
@@ -70,13 +86,14 @@ void *callback(void *callbackArgs) {
 }
 
 JNIEXPORT void JNICALL Java_com_rh_example_NativeBridge_helloNative
-    (JNIEnv *env, jobject obj, jstring msgFromJava) {
+    (JNIEnv *env, jobject obj, jstring msgFromJava, jobject loader) {
 
     printf("start native\n");
 
     thread_args myargs;
     myargs.obj = obj;
     myargs.msgFromJava = msgFromJava;
+    myargs.loader = loader;
     (*env)->GetJavaVM(env, &myargs.vm);
 
     pthread_t mythread;

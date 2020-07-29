@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     com_rh_example_NativeBridge
  * Method:    helloNative
- * Signature: (Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;Ljava/lang/ClassLoader;)V
  */
 JNIEXPORT void JNICALL Java_com_rh_example_NativeBridge_helloNative
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring, jobject);
 
 #ifdef __cplusplus
 }
